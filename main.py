@@ -50,13 +50,21 @@ class AnimatedCharacter(FloatLayout):
         )
         self.add_widget(self.image)
 
-        # เพิ่ม HealthBar (แบบหลอดสีแดง)
+        # เพิ่ม HealthBar (หลอดเลือดสีแดง)
         self.health_bar = HealthBar(
             max_health=100,
-            size_hint=(0.27, 0.007),
-            pos_hint={'center_x': 0.34, 'center_y': 0.534}
+            size_hint=(0.27, 0.006),
+            pos_hint={'center_x': 0.350, 'center_y': 0.549}
         )
         self.add_widget(self.health_bar)
+
+        # เพิ่ม ManaBar (หลอดมานาสีฟ้า)
+        self.mana_bar = ManaBar(
+            max_mana=100,
+            size_hint=(0.27, 0.006),
+            pos_hint={'center_x': 0.350, 'center_y': 0.509}
+        )
+        self.add_widget(self.mana_bar)
 
         # ตั้งเวลาเปลี่ยนภาพ Character
         Clock.schedule_interval(self.update_frame, 0.1)
@@ -65,6 +73,49 @@ class AnimatedCharacter(FloatLayout):
         self.current_frame = (self.current_frame + 1) % len(self.frames)
         self.image.source = self.frames[self.current_frame]
         self.image.reload()
+
+class ManaBar(Widget):
+    mana = NumericProperty(100)  # ค่าเริ่มต้นของมานา
+
+    def __init__(self, max_mana=100, **kwargs):
+        super().__init__(**kwargs)
+        self.max_mana = max_mana  # ค่าเต็มของมานา
+        self.mana = max_mana  # เริ่มต้นที่ค่ามานาเต็ม
+
+        # กำหนดขนาดหลอดมานา
+        self.size_hint = kwargs.get('size_hint', (0.3, 0.05))
+        self.pos_hint = kwargs.get('pos_hint', {'center_x': 0.5, 'center_y': 0.45})
+
+        # วาดหลอดมานาใน canvas
+        with self.canvas:
+            # สีพื้นหลัง (สีเทา)
+            Color(0.3, 0.3, 0.3, 1)  # RGBA
+            self.background = Rectangle(size=self.size, pos=self.pos)
+
+            # สีมานา (สีฟ้า)
+            Color(0, 0, 1, 1)  # สีฟ้า RGBA
+            self.mana_bar = Rectangle(size=self.size, pos=self.pos)
+
+        # อัปเดตตำแหน่งและขนาดเมื่อมีการเปลี่ยนแปลง
+        self.bind(pos=self.update_bar, size=self.update_bar, mana=self.update_bar)
+
+    def update_bar(self, *args):
+        """อัปเดตหลอดมานาเมื่อค่าหรือขนาดเปลี่ยน"""
+        self.background.size = self.size
+        self.background.pos = self.pos
+
+        # ความกว้างของหลอดมานาสัมพันธ์กับค่า mana
+        mana_width = (self.mana / self.max_mana) * self.size[0]
+        self.mana_bar.size = (mana_width, self.size[1])
+        self.mana_bar.pos = self.pos
+
+    def reduce_mana(self, amount):
+        """ลดค่ามานา"""
+        self.mana = max(0, self.mana - amount)  # ลดค่ามานาแต่ไม่ต่ำกว่า 0
+
+    def increase_mana(self, amount):
+        """เพิ่มค่ามานา"""
+        self.mana = min(self.max_mana, self.mana + amount)  # เพิ่มค่ามานาแต่ไม่เกิน max
 
 class HealthBar(Widget):
     health = NumericProperty(100)  # ค่าเลือดเริ่มต้น
@@ -184,11 +235,18 @@ class PlayScreen(Screen):
         self.layout.add_widget(static_image)
 
         heal_bar = Image(
-            source='Heal_bar.png',  # พาธรูปภาพที่ต้องการเพิ่ม
+            source='heal_bar.png',  # พาธรูปภาพที่ต้องการเพิ่ม
             size_hint=(0.3, 0.4),
-            pos_hint={'center_x': 0.34, 'center_y': 0.535}  # กำหนดตำแหน่ง
+            pos_hint={'center_x': 0.338, 'center_y': 0.555}  # กำหนดตำแหน่ง
         )
         self.layout.add_widget(heal_bar)
+
+        mana_bar = Image(
+            source='mana_bar.png',  # พาธรูปภาพที่ต้องการเพิ่ม
+            size_hint=(0.3, 0.4),
+            pos_hint={'center_x': 0.338, 'center_y': 0.515}  # กำหนดตำแหน่ง
+        )
+        self.layout.add_widget(mana_bar)
 
         # ปุ่ม 4 ปุ่มบริเวณขวาล่างพร้อมรูปภาพแยก
         button_positions = [
