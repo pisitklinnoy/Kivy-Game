@@ -5,6 +5,10 @@ from kivy.uix.button import Button
 from kivy.uix.floatlayout import FloatLayout
 from kivy.core.window import Window
 from kivy.clock import Clock
+from kivy.uix.progressbar import ProgressBar
+from kivy.properties import NumericProperty
+from kivy.uix.widget import Widget
+from kivy.graphics import Color, Rectangle
 
 
 class AnimatedSlime(FloatLayout):
@@ -17,8 +21,8 @@ class AnimatedSlime(FloatLayout):
         # แสดงภาพ slime
         self.image = Image(
             source=self.frames[self.current_frame],
-            size_hint=(0.5, 0.5),
-            pos_hint={'center_x': 0.85, 'center_y': 0.36}
+            size_hint=(0.25, 0.25),
+            pos_hint={'center_x': 0.68, 'center_y': 0.65}
         )
         self.add_widget(self.image)
 
@@ -41,10 +45,18 @@ class AnimatedCharacter(FloatLayout):
         # แสดงภาพ Character
         self.image = Image(
             source=self.frames[self.current_frame],
-            size_hint=(0.8, 0.8),
-            pos_hint={'center_x': 0.2, 'center_y': 0.43}
+            size_hint=(0.4, 0.4),
+            pos_hint={'center_x': 0.34, 'center_y': 0.7}
         )
         self.add_widget(self.image)
+
+        # เพิ่ม HealthBar (แบบหลอดสีแดง)
+        self.health_bar = HealthBar(
+            max_health=100,
+            size_hint=(0.27, 0.007),
+            pos_hint={'center_x': 0.34, 'center_y': 0.534}
+        )
+        self.add_widget(self.health_bar)
 
         # ตั้งเวลาเปลี่ยนภาพ Character
         Clock.schedule_interval(self.update_frame, 0.1)
@@ -54,6 +66,48 @@ class AnimatedCharacter(FloatLayout):
         self.image.source = self.frames[self.current_frame]
         self.image.reload()
 
+class HealthBar(Widget):
+    health = NumericProperty(100)  # ค่าเลือดเริ่มต้น
+
+    def __init__(self, max_health=100, **kwargs):
+        super().__init__(**kwargs)
+        self.max_health = max_health  # ค่าเลือดสูงสุด
+        self.health = max_health  # เริ่มต้นที่ค่าหลอดเต็ม
+
+        # กำหนดขนาดหลอดเลือด
+        self.size_hint = kwargs.get('size_hint', (0.3, 0.05))
+        self.pos_hint = kwargs.get('pos_hint', {'center_x': 0.5, 'center_y': 0.5})
+
+        # วาดหลอดเลือดใน canvas
+        with self.canvas:
+            # สีพื้นหลัง (สีเทา)
+            Color(0.3, 0.3, 0.3, 1)  # RGBA
+            self.background = Rectangle(size=self.size, pos=self.pos)
+
+            # สีเลือด (สีแดง)
+            Color(1, 0, 0, 1)  # สีแดง RGBA
+            self.health_bar = Rectangle(size=self.size, pos=self.pos)
+
+        # อัปเดตตำแหน่งและขนาดเมื่อมีการเปลี่ยนแปลง
+        self.bind(pos=self.update_bar, size=self.update_bar, health=self.update_bar)
+
+    def update_bar(self, *args):
+        """อัปเดตหลอดเลือดเมื่อค่าหรือขนาดเปลี่ยน"""
+        self.background.size = self.size
+        self.background.pos = self.pos
+
+        # ความกว้างของหลอดเลือดสัมพันธ์กับค่า health
+        health_width = (self.health / self.max_health) * self.size[0]
+        self.health_bar.size = (health_width, self.size[1])
+        self.health_bar.pos = self.pos
+
+    def reduce_health(self, amount):
+        """ลดค่าเลือด"""
+        self.health = max(0, self.health - amount)  # ลดค่าเลือดแต่ไม่ต่ำกว่า 0
+
+    def increase_health(self, amount):
+        """เพิ่มค่าเลือด"""
+        self.health = min(self.max_health, self.health + amount)  # เพิ่มค่าเลือดแต่ไม่เกิน max
 
 class MenuScreen(Screen):
     def __init__(self, **kwargs):
@@ -62,7 +116,7 @@ class MenuScreen(Screen):
 
         # พื้นหลัง
         self.background = Image(
-            source='image.png',
+            source='Main_background.png',
             size_hint=(1, 1),
             pos_hint={'center_x': 0.5, 'center_y': 0.5}
         )
@@ -70,20 +124,20 @@ class MenuScreen(Screen):
 
         # ปุ่ม Play
         play_button = Button(
-            size_hint=(0.3, 0.2),
-            pos_hint={'x': 0.35, 'y': 0.6},
-            background_normal='button_game.png',
-            background_down='button_game.png'
+            size_hint=(0.1, 0.12),
+            pos_hint={'x': 0.597, 'y': 0.44},
+            background_normal='Play_button.png',
+            background_down='Play_button.png'
         )
         play_button.bind(on_press=self.go_to_play)
         layout.add_widget(play_button)
 
         # ปุ่ม Exit
         exit_button = Button(
-            size_hint=(0.3, 0.2),
-            pos_hint={'x': 0.353, 'y': 0.28},
-            background_normal='button_exit.png',
-            background_down='button_exit.png'
+            size_hint=(0.09, 0.1),
+            pos_hint={'x': 0.624, 'y': 0.82},
+            background_normal='cross_button.png',
+            background_down='cross_button.png'
         )
         exit_button.bind(on_press=self.exit_app)
         layout.add_widget(exit_button)
@@ -109,7 +163,7 @@ class PlayScreen(Screen):
 
         # พื้นหลัง
         background = Image(
-            source='Indie Game Background (1).jpg',
+            source='All_backgroiund.png',
             allow_stretch=True,
             keep_ratio=False,
             size_hint=(1, 1),
@@ -129,21 +183,47 @@ class PlayScreen(Screen):
         )
         self.layout.add_widget(static_image)
 
-        # ปุ่ม 4 ปุ่มบริเวณขวาล่าง
+        heal_bar = Image(
+            source='Heal_bar.png',  # พาธรูปภาพที่ต้องการเพิ่ม
+            size_hint=(0.3, 0.4),
+            pos_hint={'center_x': 0.34, 'center_y': 0.535}  # กำหนดตำแหน่ง
+        )
+        self.layout.add_widget(heal_bar)
+
+        # ปุ่ม 4 ปุ่มบริเวณขวาล่างพร้อมรูปภาพแยก
         button_positions = [
-            {'x': 0.32, 'y': 0.27},
-            {'x': 0.5, 'y': 0.25},
-            {'x': 0.4, 'y': 0.1},
-            {'x': 0.5, 'y': 0.1}
+            {'x': 0.33, 'y': 0.25},  # ตำแหน่งปุ่ม 1
+            {'x': 0.5, 'y': 0.25},   # ตำแหน่งปุ่ม 2
+            {'x': 0.4, 'y': 0.1},    # ตำแหน่งปุ่ม 3
+            {'x': 0.5, 'y': 0.1}     # ตำแหน่งปุ่ม 4
         ]
+
+        # รูปภาพสำหรับปุ่มแต่ละปุ่ม
+        button_images_normal = [
+            'Button_image/button_fight.png',  # รูปปุ่มปกติสำหรับปุ่ม 1
+            'button_image_2_normal.png',  # รูปปุ่มปกติสำหรับปุ่ม 2
+            'button_image_3_normal.png',  # รูปปุ่มปกติสำหรับปุ่ม 3
+            'button_image_4_normal.png'  # รูปปุ่มปกติสำหรับปุ่ม 4
+        ]
+
+        button_images_down = [
+            'Button_image/button_fight.png',  # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 1
+            'button_image_2_down.png',  # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 2
+            'button_image_3_down.png',  # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 3
+            'button_image_4_down.png'  # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 4
+        ]
+
+        # สร้างปุ่มแต่ละปุ่ม
         for i, pos in enumerate(button_positions):
             button = Button(
-                text=f'Button {i + 1}',
-                size_hint=(0.08, 0.1),
-                pos_hint=pos
+                size_hint=(0.17, 0.17),  # กำหนดขนาดปุ่ม
+                pos_hint=pos,
+                background_normal=button_images_normal[i],  # ใช้รูปสำหรับสถานะปกติ
+                background_down=button_images_down[i]       # ใช้รูปสำหรับสถานะถูกกด
             )
-            button.bind(on_press=lambda instance, idx=i: self.on_button_press(idx))
+            button.bind(on_press=lambda instance, idx=i: self.on_button_press(idx))  # ผูกฟังก์ชันเมื่อกดปุ่ม
             self.layout.add_widget(button)
+
 
         # เพิ่มตัวละครใหม่
         self.character = AnimatedCharacter()
