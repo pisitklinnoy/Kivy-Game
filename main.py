@@ -7,22 +7,22 @@ from kivy.core.window import Window
 from kivy.clock import Clock
 
 
-class AnimatedGolem(FloatLayout):
+class AnimatedSlime(FloatLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # ลำดับของไฟล์ภาพ Golem
-        self.frames = [f'golem_animation/{i}.png' for i in range(14)]
+        # ลำดับของไฟล์ภาพ slime
+        self.frames = [f'Slime_animation/{i}.png' for i in range(21)]
         self.current_frame = 0
 
-        # แสดงภาพ Golem
+        # แสดงภาพ slime
         self.image = Image(
             source=self.frames[self.current_frame],
             size_hint=(0.5, 0.5),
-            pos_hint={'center_x': 0.8, 'center_y': 0.5}
+            pos_hint={'center_x': 0.85, 'center_y': 0.36}
         )
         self.add_widget(self.image)
 
-        # ตั้งเวลาเปลี่ยนภาพ Golem
+        # ตั้งเวลาเปลี่ยนภาพ slime
         Clock.schedule_interval(self.update_frame, 0.1)
 
     def update_frame(self, dt):
@@ -42,7 +42,7 @@ class AnimatedCharacter(FloatLayout):
         self.image = Image(
             source=self.frames[self.current_frame],
             size_hint=(0.8, 0.8),
-            pos_hint={'center_x': 0.15, 'center_y': 0.25}
+            pos_hint={'center_x': 0.2, 'center_y': 0.43}
         )
         self.add_widget(self.image)
 
@@ -109,7 +109,7 @@ class PlayScreen(Screen):
 
         # พื้นหลัง
         background = Image(
-            source='background_fight.jpg',
+            source='Indie Game Background (1).jpg',
             allow_stretch=True,
             keep_ratio=False,
             size_hint=(1, 1),
@@ -117,9 +117,33 @@ class PlayScreen(Screen):
         )
         self.layout.add_widget(background)
 
-        # เพิ่ม Golem
-        self.golem = AnimatedGolem()
-        self.layout.add_widget(self.golem)
+        # เพิ่ม slime
+        self.slime = AnimatedSlime()
+        self.layout.add_widget(self.slime)
+
+        # รูปภาพบริเวณขวาล่าง
+        static_image = Image(
+            source='Battle_Ui.png',  # ใส่ชื่อไฟล์รูปภาพ
+            size_hint=(0.4, 0.5),
+            pos_hint={'x': 0.33, 'y': 0.0}
+        )
+        self.layout.add_widget(static_image)
+
+        # ปุ่ม 4 ปุ่มบริเวณขวาล่าง
+        button_positions = [
+            {'x': 0.32, 'y': 0.27},
+            {'x': 0.5, 'y': 0.25},
+            {'x': 0.4, 'y': 0.1},
+            {'x': 0.5, 'y': 0.1}
+        ]
+        for i, pos in enumerate(button_positions):
+            button = Button(
+                text=f'Button {i + 1}',
+                size_hint=(0.08, 0.1),
+                pos_hint=pos
+            )
+            button.bind(on_press=lambda instance, idx=i: self.on_button_press(idx))
+            self.layout.add_widget(button)
 
         # เพิ่มตัวละครใหม่
         self.character = AnimatedCharacter()
@@ -138,9 +162,13 @@ class PlayScreen(Screen):
         # เพิ่ม layout เป็นวิดเจ็ตลูกใน PlayScreen
         self.add_widget(self.layout)
 
+    def on_button_press(self, button_index):
+        print(f"Button {button_index + 1} pressed")
+
     def go_to_menu(self, instance):
         # เปลี่ยนกลับไปยังหน้าจอเมนู
         self.manager.current = 'menu'
+
 
 
 class MyApp(App):
