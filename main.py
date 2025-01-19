@@ -38,9 +38,6 @@ class AnimatedSlime(FloatLayout):
         self.image.source = self.frames[self.current_frame]
         self.image.reload()
 
-    def reduce_health(self, amount):
-        self.health_bar.reduce_health(amount)
-        self.on_hit()
 
     def on_hit(self):
         """แอนิเมชันเมื่อ Slime ถูกโจมตี"""
@@ -65,6 +62,44 @@ class AnimatedSlime(FloatLayout):
         # เริ่มแอนิเมชันที่เฟรมแรก
         animate_hit(0, 0)
 
+    def on_death(self):
+        """แอนิเมชันเมื่อ Slime ตาย"""
+        print("Slime has died!")  # Debug
+
+        # โหลดภาพชุดสำหรับแอนิเมชันการตาย
+        death_frames = [f'slime_death_animation/{i}.png' for i in range(31)]
+
+        def animate_death(index, dt):
+            """ฟังก์ชันสำหรับเปลี่ยนภาพในแต่ละเฟรม"""
+            if index < len(death_frames):
+                # เปลี่ยนภาพเป็นเฟรมถัดไป
+                self.image.source = death_frames[index]
+                self.image.reload()
+
+                # ปรับขนาดและตำแหน่งภาพในแต่ละเฟรม
+                self.image.size_hint = (0.7, 0.25)  # กำหนดขนาดที่ต้องการ
+                self.image.pos_hint = {'center_x': 0.715, 'center_y': 0.657}  # กำหนดตำแหน่งที่ต้องการ
+
+                # เรียกแอนิเมชันเฟรมถัดไปทุก 0.05 วินาที
+                Clock.schedule_once(lambda dt: animate_death(index + 1, dt), 0.01)
+            else:
+                # ลบ Widget หลังแอนิเมชันจบ
+                if self.parent:
+                    self.parent.remove_widget(self)
+
+        # เริ่มแอนิเมชันที่เฟรมแรก
+        animate_death(0, 0)
+
+    def reduce_health(self, amount):
+        """ลดค่าเลือดของ Slime"""
+        self.health_bar.reduce_health(amount)
+
+        # เช็คว่าเลือดเหลือ 0 หรือไม่
+        if self.health_bar.health <= 0:  # เปลี่ยนจาก current_health เป็น health
+            self.on_death()  # เรียกแอนิเมชันการตาย
+        else:
+            self.on_hit()  # เล่นแอนิเมชันโดนตีหากยังมีเลือดเหลือ
+            
 class AnimatedCharacter(FloatLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
