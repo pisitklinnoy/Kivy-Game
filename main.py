@@ -14,11 +14,9 @@ from kivy.graphics import Color, Rectangle
 class AnimatedSlime(FloatLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # ลำดับของไฟล์ภาพ slime
         self.frames = [f'Slime_animation/{i}.png' for i in range(21)]
         self.current_frame = 0
 
-        # แสดงภาพ slime
         self.image = Image(
             source=self.frames[self.current_frame],
             size_hint=(0.25, 0.25),
@@ -26,7 +24,13 @@ class AnimatedSlime(FloatLayout):
         )
         self.add_widget(self.image)
 
-        # ตั้งเวลาเปลี่ยนภาพ slime
+        self.health_bar = HealthBar(
+            max_health=100,
+            size_hint=(0.2, 0.01),
+            pos_hint={'center_x': 0.68, 'center_y': 0.78}
+        )
+        self.add_widget(self.health_bar)
+
         Clock.schedule_interval(self.update_frame, 0.1)
 
     def update_frame(self, dt):
@@ -34,6 +38,32 @@ class AnimatedSlime(FloatLayout):
         self.image.source = self.frames[self.current_frame]
         self.image.reload()
 
+    def reduce_health(self, amount):
+        self.health_bar.reduce_health(amount)
+        self.on_hit()
+
+    def on_hit(self):
+        """แอนิเมชันเมื่อ Slime ถูกโจมตี"""
+        print("Slime is hit!")  # Debug
+
+        # โหลดภาพชุดสำหรับแอนิเมชันการโดนตี
+        hit_frames = [f'slime_hit_animation/{i}.png' for i in range(29)]  # ใช้ไฟล์ 0.png ถึง 11.png
+        original_frames = self.frames  # เก็บเฟรมปกติไว้
+
+        def animate_hit(index, dt):
+            """ฟังก์ชันสำหรับเปลี่ยนภาพในแต่ละเฟรม"""
+            if index < len(hit_frames):  # ยังมีเฟรมเหลือ
+                self.image.source = hit_frames[index]  # เปลี่ยนภาพเป็นเฟรมถัดไป
+                self.image.reload()
+                Clock.schedule_once(lambda dt: animate_hit(index + 1, dt), 0.009)  # เรียกเฟรมถัดไปทุก 0.05 วินาที
+            else:
+                # กลับสู่แอนิเมชันปกติ
+                self.frames = original_frames
+                self.image.source = self.frames[self.current_frame]
+                self.image.reload()
+
+        # เริ่มแอนิเมชันที่เฟรมแรก
+        animate_hit(0, 0)
 
 class AnimatedCharacter(FloatLayout):
     def __init__(self, **kwargs):
@@ -227,12 +257,12 @@ class PlayScreen(Screen):
         self.layout.add_widget(self.slime)
 
         # รูปภาพบริเวณขวาล่าง
-        static_image = Image(
-            source='Battle_Ui.png',  # ใส่ชื่อไฟล์รูปภาพ
-            size_hint=(0.4, 0.5),
-            pos_hint={'x': 0.33, 'y': 0.0}
-        )
-        self.layout.add_widget(static_image)
+        # static_image = Image(
+        #     source='Battle_Ui.png',  # ใส่ชื่อไฟล์รูปภาพ
+        #     size_hint=(0.4, 0.5),
+        #     pos_hint={'x': 0.33, 'y': 0.0}
+        # )
+        # self.layout.add_widget(static_image)
 
         heal_bar = Image(
             source='heal_bar.png',  # พาธรูปภาพที่ต้องการเพิ่ม
@@ -250,38 +280,44 @@ class PlayScreen(Screen):
 
         # ปุ่ม 4 ปุ่มบริเวณขวาล่างพร้อมรูปภาพแยก
         button_positions = [
-            {'x': 0.33, 'y': 0.25},  # ตำแหน่งปุ่ม 1
-            {'x': 0.5, 'y': 0.25},   # ตำแหน่งปุ่ม 2
-            {'x': 0.4, 'y': 0.1},    # ตำแหน่งปุ่ม 3
-            {'x': 0.5, 'y': 0.1}     # ตำแหน่งปุ่ม 4
+            {'x': 0.01, 'y': 0.37},  # ตำแหน่งปุ่ม 1
+            {'x': 0.34, 'y': 0.362},  # ตำแหน่งปุ่ม 2
+            {'x': 0.19, 'y': 0.27},    # ตำแหน่งปุ่ม 3
+            {'x': 0.35, 'y': 0.29}     # ตำแหน่งปุ่ม 4
         ]
 
-        # รูปภาพสำหรับปุ่มแต่ละปุ่ม
+        button_sizes = [
+            (0.12, 0.12),  # ขนาดสำหรับปุ่ม 1
+            (0.14, 0.12),  # ขนาดสำหรับปุ่ม 2
+            (0.14, 0.11),    # ขนาดสำหรับปุ่ม 3
+            (0.12, 0.1)   # ขนาดสำหรับปุ่ม 4
+        ]
+
+        # # รูปภาพสำหรับปุ่มแต่ละปุ่ม
         button_images_normal = [
-            'Button_image/button_fight.png',  # รูปปุ่มปกติสำหรับปุ่ม 1
-            'button_image_2_normal.png',  # รูปปุ่มปกติสำหรับปุ่ม 2
-            'button_image_3_normal.png',  # รูปปุ่มปกติสำหรับปุ่ม 3
-            'button_image_4_normal.png'  # รูปปุ่มปกติสำหรับปุ่ม 4
+            'Button_image/fight_font_button.png',  # รูปปุ่มปกติสำหรับปุ่ม 1
+            'Button_image/magic_font_button.png',  # รูปปุ่มปกติสำหรับปุ่ม 2
+            'Button_image/bag_font.png',          # รูปปุ่มปกติสำหรับปุ่ม 3
+            'Button_image/run_font.png'           # รูปปุ่มปกติสำหรับปุ่ม 4
         ]
 
         button_images_down = [
-            'Button_image/button_fight.png',  # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 1
-            'button_image_2_down.png',  # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 2
-            'button_image_3_down.png',  # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 3
-            'button_image_4_down.png'  # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 4
+            'Button_image/font_button.png',       # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 1
+            'Button_image/magic_font_button.png', # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 2
+            'button_image_3_down.png',            # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 3
+            'button_image_4_down.png'             # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 4
         ]
 
         # สร้างปุ่มแต่ละปุ่ม
         for i, pos in enumerate(button_positions):
             button = Button(
-                size_hint=(0.17, 0.17),  # กำหนดขนาดปุ่ม
+                size_hint=button_sizes[i],  # ใช้ขนาดที่กำหนดไว้สำหรับแต่ละปุ่ม
                 pos_hint=pos,
                 background_normal=button_images_normal[i],  # ใช้รูปสำหรับสถานะปกติ
                 background_down=button_images_down[i]       # ใช้รูปสำหรับสถานะถูกกด
             )
             button.bind(on_press=lambda instance, idx=i: self.on_button_press(idx))  # ผูกฟังก์ชันเมื่อกดปุ่ม
             self.layout.add_widget(button)
-
 
         # เพิ่มตัวละครใหม่
         self.character = AnimatedCharacter()
@@ -301,7 +337,9 @@ class PlayScreen(Screen):
         self.add_widget(self.layout)
 
     def on_button_press(self, button_index):
-        print(f"Button {button_index + 1} pressed")
+        if button_index == 0:  # ปุ่ม Fight
+            print("Slime is attacked!")
+            self.slime.reduce_health(10)  # ลดเลือดของ Slime ลง 10
 
     def go_to_menu(self, instance):
         # เปลี่ยนกลับไปยังหน้าจอเมนู
