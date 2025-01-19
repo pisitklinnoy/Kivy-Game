@@ -17,6 +17,10 @@ class AnimatedSlime(FloatLayout):
         self.frames = [f'Slime_animation/{i}.png' for i in range(21)]
         self.current_frame = 0
 
+        # บันทึกตำแหน่งและขนาดเริ่มต้น
+        self.original_pos_hint = {'center_x': 0.68, 'center_y': 0.65}
+        self.original_size_hint = (0.25, 0.25)
+        
         self.health_bar = HealthBar(
             max_health=100,
             size_hint=(0.265, 0.006),
@@ -62,6 +66,41 @@ class AnimatedSlime(FloatLayout):
 
         # เริ่มแอนิเมชันที่เฟรมแรก
         animate_hit(0, 0)
+
+    def attack_animation(self, on_attack_complete=None):
+        """แอนิเมชันการโจมตีของ Slime"""
+        print("Slime attacks!")  # Debug
+
+        attack_frames = [f'slime_attack_animation/{i}.png' for i in range(36)]
+        original_frames = self.frames
+
+        def animate_attack(index, dt):
+            """ฟังก์ชันสำหรับแสดงแอนิเมชันโจมตี"""
+            if index < len(attack_frames):  # หากยังมีเฟรมที่ต้องแสดง
+                self.image.source = attack_frames[index]
+                self.image.reload()
+
+                # ปรับขนาดและตำแหน่งภาพในแต่ละเฟรม
+                self.image.size_hint = (0.7, 0.25)  # ขนาดใหม่ระหว่างโจมตี
+                self.image.pos_hint = {'center_x': 0.605, 'center_y': 0.646}  # ตำแหน่งใหม่ระหว่างโจมตี
+
+                Clock.schedule_once(lambda dt: animate_attack(index + 1, dt), 0.013)
+            else:
+                # กลับสู่เฟรมปกติ
+                self.frames = original_frames
+                self.image.source = self.frames[self.current_frame]
+                self.image.reload()
+
+                # คืนค่าขนาดและตำแหน่งเดิม
+                self.image.size_hint = self.original_size_hint
+                self.image.pos_hint = self.original_pos_hint
+
+                # หากมี callback หลังโจมตีเสร็จ
+                if on_attack_complete:
+                    on_attack_complete()
+
+        # เริ่มแอนิเมชันที่เฟรมแรก
+        animate_attack(0, 0)
 
     def on_death(self):
         """แอนิเมชันเมื่อ Slime ตาย"""
@@ -316,14 +355,14 @@ class PlayScreen(Screen):
 
         # ปุ่ม 4 ปุ่มบริเวณขวาล่างพร้อมรูปภาพแยก
         button_positions = [
-            {'x': 0.01, 'y': 0.37},  # ตำแหน่งปุ่ม 1
+            {'x': 0.034, 'y': 0.37},  # ตำแหน่งปุ่ม 1
             {'x': 0.34, 'y': 0.362},  # ตำแหน่งปุ่ม 2
             {'x': 0.19, 'y': 0.27},    # ตำแหน่งปุ่ม 3
             {'x': 0.35, 'y': 0.29}     # ตำแหน่งปุ่ม 4
         ]
 
         button_sizes = [
-            (0.12, 0.12),  # ขนาดสำหรับปุ่ม 1
+            (0.15, 0.10),  # ขนาดสำหรับปุ่ม 1
             (0.14, 0.12),  # ขนาดสำหรับปุ่ม 2
             (0.14, 0.11),    # ขนาดสำหรับปุ่ม 3
             (0.12, 0.1)   # ขนาดสำหรับปุ่ม 4
@@ -331,14 +370,14 @@ class PlayScreen(Screen):
 
         # # รูปภาพสำหรับปุ่มแต่ละปุ่ม
         button_images_normal = [
-            'Button_image/fight_font_button.png',  # รูปปุ่มปกติสำหรับปุ่ม 1
+            'Button_image/onput_fight_font_button.png',  # รูปปุ่มปกติสำหรับปุ่ม 1
             'Button_image/magic_font_button.png',  # รูปปุ่มปกติสำหรับปุ่ม 2
             'Button_image/bag_font.png',          # รูปปุ่มปกติสำหรับปุ่ม 3
             'Button_image/run_font.png'           # รูปปุ่มปกติสำหรับปุ่ม 4
         ]
 
         button_images_down = [
-            'Button_image/font_button.png',       # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 1
+            'Button_image/output_fight_font_button.png',       # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 1
             'Button_image/magic_font_button.png', # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 2
             'button_image_3_down.png',            # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 3
             'button_image_4_down.png'             # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 4
@@ -372,10 +411,21 @@ class PlayScreen(Screen):
         # เพิ่ม layout เป็นวิดเจ็ตลูกใน PlayScreen
         self.add_widget(self.layout)
 
-    def on_button_press(self, button_index):
+    def on_button_press(self, button_index): 
         if button_index == 0:  # ปุ่ม Fight
-            print("Slime is attacked!")
+            print("Character attacks Slime!")
             self.slime.reduce_health(10)  # ลดเลือดของ Slime ลง 10
+
+            # หลังจากกด Fight ให้ Slime โจมตีตัวละครกลับ
+            Clock.schedule_once(lambda dt: self.slime_attacks_character(), 0.5)  # ให้เวลา 0.5 วินาทีก่อน Slime โจมตีกลับ
+
+    def slime_attacks_character(self):
+        print("Slime attacks Character!")
+    
+        # เรียกใช้แอนิเมชันการโจมตีของ Slime
+        self.slime.attack_animation(
+            on_attack_complete=lambda: self.character.health_bar.reduce_health(15)  # ลดเลือดตัวละครลง 15 หลังแอนิเมชันจบ
+        )
 
     def go_to_menu(self, instance):
         # เปลี่ยนกลับไปยังหน้าจอเมนู
