@@ -17,6 +17,13 @@ class AnimatedSlime(FloatLayout):
         self.frames = [f'Slime_animation/{i}.png' for i in range(21)]
         self.current_frame = 0
 
+        self.health_bar = HealthBar(
+            max_health=100,
+            size_hint=(0.265, 0.006),
+            pos_hint={'center_x': 0.675, 'center_y': 0.528}
+        )
+        self.add_widget(self.health_bar)
+
         self.image = Image(
             source=self.frames[self.current_frame],
             size_hint=(0.25, 0.25),
@@ -24,12 +31,6 @@ class AnimatedSlime(FloatLayout):
         )
         self.add_widget(self.image)
 
-        self.health_bar = HealthBar(
-            max_health=100,
-            size_hint=(0.2, 0.01),
-            pos_hint={'center_x': 0.68, 'center_y': 0.78}
-        )
-        self.add_widget(self.health_bar)
 
         Clock.schedule_interval(self.update_frame, 0.1)
 
@@ -288,16 +289,16 @@ class PlayScreen(Screen):
         self.layout.add_widget(background)
 
         # เพิ่ม slime
+
+        enermy_heal_bar = Image(
+            source='enermy_heal_bar.png',  # พาธรูปภาพที่ต้องการเพิ่ม
+            size_hint=(0.3, 0.4),
+            pos_hint={'center_x': 0.665, 'center_y': 0.53}  # กำหนดตำแหน่ง
+        )
+        self.layout.add_widget(enermy_heal_bar)
+
         self.slime = AnimatedSlime()
         self.layout.add_widget(self.slime)
-
-        # รูปภาพบริเวณขวาล่าง
-        # static_image = Image(
-        #     source='Battle_Ui.png',  # ใส่ชื่อไฟล์รูปภาพ
-        #     size_hint=(0.4, 0.5),
-        #     pos_hint={'x': 0.33, 'y': 0.0}
-        # )
-        # self.layout.add_widget(static_image)
 
         heal_bar = Image(
             source='heal_bar.png',  # พาธรูปภาพที่ต้องการเพิ่ม
