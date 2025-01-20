@@ -171,8 +171,36 @@ class AnimatedCharacter(FloatLayout):
         )
         self.add_widget(self.mana_bar)
 
+        # วัตถุสำหรับแสดงแอนิเมชัน Magic
+        self.magic_effect = Image(
+            size_hint=(0.4, 0.4),
+            pos_hint={'center_x': 0.685, 'center_y': 0.75},
+            opacity=0  # ซ่อนตอนเริ่มต้น
+        )
+        self.add_widget(self.magic_effect)
+
         # ตั้งเวลาเปลี่ยนภาพ Character
         Clock.schedule_interval(self.update_frame, 0.1)
+
+    def magic_animation(self, on_animation_complete=None):
+        """แอนิเมชันการใช้ Magic"""
+        print("Character uses Magic!")  # Debug
+        magic_frames = [f'power_fire_animation/{i}.png' for i in range(42)]
+        self.magic_effect.opacity = 1  # แสดงแอนิเมชัน Magic
+
+        def animate_magic(index, dt):
+            """แสดงแอนิเมชันการใช้ Magic"""
+            if index < len(magic_frames):
+                self.magic_effect.source = magic_frames[index]  # เปลี่ยนเฟรม Magic
+                self.magic_effect.reload()
+                Clock.schedule_once(lambda dt: animate_magic(index + 1, dt), 0.01)
+            else:
+                self.magic_effect.opacity = 0  # ซ่อนแอนิเมชันหลังเสร็จ
+                if on_animation_complete:
+                    on_animation_complete()
+
+        # เริ่มแอนิเมชัน Magic
+        animate_magic(0, 0)
 
     def update_frame(self, dt):
         self.current_frame = (self.current_frame + 1) % len(self.frames)
@@ -411,24 +439,35 @@ class PlayScreen(Screen):
         # เพิ่ม layout เป็นวิดเจ็ตลูกใน PlayScreen
         self.add_widget(self.layout)
 
-    def on_button_press(self, button_index): 
+    def on_button_press(self, button_index):
         if button_index == 0:  # ปุ่ม Fight
-            print("Character attacks Slime!")
+            print("Character attacks Slime with Fight!")
             self.slime.reduce_health(10)  # ลดเลือดของ Slime ลง 10
 
-            # หลังจากกด Fight ให้ Slime โจมตีตัวละครกลับ
-            Clock.schedule_once(lambda dt: self.slime_attacks_character(), 0.5)  # ให้เวลา 0.5 วินาทีก่อน Slime โจมตีกลับ
+            # Slime โจมตีตัวละครกลับ
+            Clock.schedule_once(lambda dt: self.slime_attacks_character(), 0.5)
 
         elif button_index == 1:  # ปุ่ม Magic
             if self.character.mana_bar.mana >= 50:  # เช็คว่ามานาเพียงพอ
                 print("Character attacks Slime with Magic!")
-                self.slime.reduce_health(20)  # ลดเลือดของ Slime ลง 20 (Magic มีพลังโจมตีมากกว่า)
-                self.character.mana_bar.reduce_mana(50)  # ลดมานาลง 50
+            
+                # ลดมานาทันที
+                self.character.mana_bar.reduce_mana(50)
+
+            
+                # ลดเลือดของ Slime
+                self.slime.reduce_health(20)
+
+                # Slime แสดงแอนิเมชัน on_hit ทันที
+                self.slime.on_hit()
+                
+                # เรียกแอนิเมชัน Magic
+                self.character.magic_animation()
 
                 # Slime โจมตีตัวละครกลับ
-                Clock.schedule_once(lambda dt: self.slime_attacks_character(), 0.5)
+                Clock.schedule_once(lambda dt: self.slime_attacks_character(), 0.016)
             else:
-                print("Not enough mana to use Magic!")  # แจ้งเตือนหากมานาไม่พอ
+                print("Not enough mana to use Magic!")
 
     def slime_attacks_character(self):
         print("Slime attacks Character!")
