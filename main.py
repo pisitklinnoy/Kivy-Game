@@ -356,30 +356,30 @@ class PlayScreen(Screen):
         # ปุ่ม 4 ปุ่มบริเวณขวาล่างพร้อมรูปภาพแยก
         button_positions = [
             {'x': 0.034, 'y': 0.37},  # ตำแหน่งปุ่ม 1
-            {'x': 0.34, 'y': 0.362},  # ตำแหน่งปุ่ม 2
-            {'x': 0.19, 'y': 0.27},    # ตำแหน่งปุ่ม 3
+            {'x': 0.026, 'y': 0.30},  # ตำแหน่งปุ่ม 2
+            {'x': 0.027, 'y': 0.23},    # ตำแหน่งปุ่ม 3
             {'x': 0.35, 'y': 0.29}     # ตำแหน่งปุ่ม 4
         ]
 
         button_sizes = [
             (0.15, 0.10),  # ขนาดสำหรับปุ่ม 1
-            (0.14, 0.12),  # ขนาดสำหรับปุ่ม 2
-            (0.14, 0.11),    # ขนาดสำหรับปุ่ม 3
+            (0.15, 0.11),  # ขนาดสำหรับปุ่ม 2
+            (0.16, 0.12),    # ขนาดสำหรับปุ่ม 3
             (0.12, 0.1)   # ขนาดสำหรับปุ่ม 4
         ]
 
         # # รูปภาพสำหรับปุ่มแต่ละปุ่ม
         button_images_normal = [
             'Button_image/onput_fight_font_button.png',  # รูปปุ่มปกติสำหรับปุ่ม 1
-            'Button_image/magic_font_button.png',  # รูปปุ่มปกติสำหรับปุ่ม 2
-            'Button_image/bag_font.png',          # รูปปุ่มปกติสำหรับปุ่ม 3
+            'Button_image/onput_magic_font_button.png',  # รูปปุ่มปกติสำหรับปุ่ม 2
+            'Button_image/onput_bags_font_button.png',          # รูปปุ่มปกติสำหรับปุ่ม 3
             'Button_image/run_font.png'           # รูปปุ่มปกติสำหรับปุ่ม 4
         ]
 
         button_images_down = [
             'Button_image/output_fight_font_button.png',       # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 1
-            'Button_image/magic_font_button.png', # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 2
-            'button_image_3_down.png',            # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 3
+            'Button_image/output_magic_font_button.png', # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 2
+            'Button_image/output_bags_font_button.png',            # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 3
             'button_image_4_down.png'             # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 4
         ]
 
@@ -418,6 +418,17 @@ class PlayScreen(Screen):
 
             # หลังจากกด Fight ให้ Slime โจมตีตัวละครกลับ
             Clock.schedule_once(lambda dt: self.slime_attacks_character(), 0.5)  # ให้เวลา 0.5 วินาทีก่อน Slime โจมตีกลับ
+
+        elif button_index == 1:  # ปุ่ม Magic
+            if self.character.mana_bar.mana >= 50:  # เช็คว่ามานาเพียงพอ
+                print("Character attacks Slime with Magic!")
+                self.slime.reduce_health(20)  # ลดเลือดของ Slime ลง 20 (Magic มีพลังโจมตีมากกว่า)
+                self.character.mana_bar.reduce_mana(50)  # ลดมานาลง 50
+
+                # Slime โจมตีตัวละครกลับ
+                Clock.schedule_once(lambda dt: self.slime_attacks_character(), 0.5)
+            else:
+                print("Not enough mana to use Magic!")  # แจ้งเตือนหากมานาไม่พอ
 
     def slime_attacks_character(self):
         print("Slime attacks Character!")
