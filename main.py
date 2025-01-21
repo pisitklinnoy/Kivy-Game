@@ -355,37 +355,44 @@ class Inventory(FloatLayout):
                 "name": "Health Potion",
                 "effect": "heal",
                 "value": 50,
-                "image": "Button_image/health_potion.png",
-                "pos_hint": {'center_x': 0.367, 'center_y': 0.53},  # ปรับตำแหน่งของ Health Potion
-                "size_hint": (0.25, 0.165),  # ปรับขนาดของ Health Potion
+                "background_normal": "Button_image/health_potion_normal.png",
+                "background_down": "Button_image/health_potion_down.png",
+                "pos_hint": {'center_x': 0.367, 'center_y': 0.53},
+                "size_hint": (0.25, 0.165),
+                "quantity": 2,  # เริ่มต้นด้วย 1 ขวด
             },
             {
                 "name": "Mana Potion",
                 "effect": "mana",
                 "value": 30,
-                "image": "Button_image/mana_potion.png",
-                "pos_hint": {'center_x': 0.369, 'center_y': 0.42},  # ปรับตำแหน่งของ Mana Potion
-                "size_hint": (0.239, 0.125),  # ปรับขนาดของ Mana Potion
+                "background_normal": "Button_image/mana_potion_normal.png",
+                "background_down": "Button_image/mana_potion_down.png",
+                "pos_hint": {'center_x': 0.369, 'center_y': 0.42},
+                "size_hint": (0.241, 0.125),
+                "quantity": 2,  # เริ่มต้นด้วย 1 ขวด
             },
         ]
-
         # แสดงไอเท็มใน Inventory
         for item in self.items:
             # เพิ่มปุ่มพร้อมภาพไอเท็ม
             item_button = Button(
-                size_hint=item["size_hint"],  # ขนาดจากข้อมูลไอเท็ม
-                pos_hint=item["pos_hint"],  # ตำแหน่งจากข้อมูลไอเท็ม
-                background_normal=item["image"],  # ใช้รูปภาพแทนปุ่ม
-                background_down=item["image"],  # ใช้รูปเดียวกันเมื่อกดปุ่ม
+                size_hint=item["size_hint"],
+                pos_hint=item["pos_hint"],
+                background_normal=item["background_normal"],
+                background_down=item["background_down"],
+                text=f"x{item['quantity']}",  # แสดงจำนวนที่เหลือ
+                font_size='20sp',
+                color=(1, 1, 1, 1),  # สีตัวอักษร (RGBA)
             )
-            item_button.bind(on_release=lambda btn, i=item: self.use_item(i))  # ผูกฟังก์ชันใช้งานไอเท็ม
+            item_button.bind(on_release=lambda btn, i=item: self.use_item(i))
             self.add_widget(item_button)
 
         # ปุ่มปิดหน้าต่าง Inventory
         self.close_button = Button(
-            text="Close",
-            size_hint=(0.2, 0.1),
-            pos_hint={'center_x': 0.5, 'center_y': 0.2}
+            size_hint=(0.09, 0.11),
+            pos_hint={'center_x': 0.37, 'center_y': 0.33},
+            background_normal='Button_image/input_exit_inventory_button.png',  # รูปภาพปุ่มปกติ
+            background_down='Button_image/output_exit_inventory_button.png',      # รูปภาพปุ่มเมื่อถูกกด
         )
         self.close_button.bind(on_release=lambda btn: self.close_inventory())
         self.add_widget(self.close_button)
@@ -397,18 +404,29 @@ class Inventory(FloatLayout):
             self.parent.character.health_bar.increase_health(item["value"])
         elif item["effect"] == "mana":
             self.parent.character.mana_bar.increase_mana(item["value"])
-        self.items.remove(item)  # ลบไอเท็มหลังใช้งาน
+        
+        # ลดจำนวนไอเท็ม
+        item["quantity"] -= 1
+        print(f"{item['name']} remaining: {item['quantity']}")
+
+        # ลบไอเท็มถ้าจำนวนเป็น 0
+        if item["quantity"] <= 0:
+            self.items.remove(item)
+        
+        # อัปเดต Inventory หลังใช้งาน
         self.update_inventory()
 
     def update_inventory(self):
         """อัปเดตหน้าต่าง Inventory"""
-        self.clear_widgets()
-        self.__init__()
+        self.clear_widgets()  # ลบวิดเจ็ตทั้งหมด
+        self.__init__()       # เรียกใช้การสร้าง Inventory ใหม่
 
     def close_inventory(self):
         """ปิดหน้าต่าง Inventory"""
-        if self.parent:
-            self.parent.remove_widget(self)
+        parent = self.parent  # เข้าถึง parent โดยตรง
+        if parent and hasattr(parent, 'inventory'):  # ตรวจสอบว่า parent มี attribute `inventory`
+            parent.inventory = None  # รีเซ็ตสถานะ inventory ใน PlayScreen
+            parent.remove_widget(self)  # ลบ Inventory ออกจาก parent
 
 class PlayScreen(Screen):
     def __init__(self, **kwargs):
@@ -458,14 +476,12 @@ class PlayScreen(Screen):
             {'x': 0.034, 'y': 0.37},  # ตำแหน่งปุ่ม 1
             {'x': 0.026, 'y': 0.30},  # ตำแหน่งปุ่ม 2
             {'x': 0.027, 'y': 0.23},    # ตำแหน่งปุ่ม 3
-            {'x': 0.35, 'y': 0.29}     # ตำแหน่งปุ่ม 4
         ]
 
         button_sizes = [
             (0.15, 0.10),  # ขนาดสำหรับปุ่ม 1
             (0.15, 0.11),  # ขนาดสำหรับปุ่ม 2
             (0.16, 0.12),    # ขนาดสำหรับปุ่ม 3
-            (0.12, 0.1)   # ขนาดสำหรับปุ่ม 4
         ]
 
         # # รูปภาพสำหรับปุ่มแต่ละปุ่ม
@@ -473,14 +489,12 @@ class PlayScreen(Screen):
             'Button_image/onput_fight_font_button.png',  # รูปปุ่มปกติสำหรับปุ่ม 1
             'Button_image/onput_magic_font_button.png',  # รูปปุ่มปกติสำหรับปุ่ม 2
             'Button_image/onput_bags_font_button.png',          # รูปปุ่มปกติสำหรับปุ่ม 3
-            'Button_image/run_font.png'           # รูปปุ่มปกติสำหรับปุ่ม 4
         ]
 
         button_images_down = [
             'Button_image/output_fight_font_button.png',       # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 1
             'Button_image/output_magic_font_button.png', # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 2
             'Button_image/output_bags_font_button.png',            # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 3
-            'button_image_4_down.png'             # รูปปุ่มเมื่อถูกกดสำหรับปุ่ม 4
         ]
 
         # สร้างปุ่มแต่ละปุ่ม
@@ -542,7 +556,7 @@ class PlayScreen(Screen):
     
         elif button_index == 2:  # ปุ่ม Bags
             print("Opening Inventory!")
-            if not hasattr(self, "inventory") or not self.inventory:  # ตรวจสอบว่ามี Inventory เปิดอยู่หรือไม่
+            if not hasattr(self, "inventory") or not self.inventory:
                 self.inventory = Inventory()  # สร้างหน้าต่าง Inventory
                 self.add_widget(self.inventory)
             else:
