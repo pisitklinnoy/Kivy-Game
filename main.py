@@ -337,6 +337,78 @@ class MenuScreen(Screen):
         App.get_running_app().stop()
         Window.close()
 
+class Inventory(FloatLayout):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        # พื้นหลังหน้าต่าง Inventory
+        self.background = Image(
+            source="inventory_game.png",  # พื้นหลัง Inventory
+            size_hint=(0.8, 0.8),
+            pos_hint={'center_x': 0.5, 'center_y': 0.5}
+        )
+        self.add_widget(self.background)
+
+        # ตัวอย่างไอเท็มใน Inventory พร้อมตำแหน่งและขนาดเฉพาะ
+        self.items = [
+            {
+                "name": "Health Potion",
+                "effect": "heal",
+                "value": 50,
+                "image": "Button_image/health_potion.png",
+                "pos_hint": {'center_x': 0.367, 'center_y': 0.53},  # ปรับตำแหน่งของ Health Potion
+                "size_hint": (0.25, 0.165),  # ปรับขนาดของ Health Potion
+            },
+            {
+                "name": "Mana Potion",
+                "effect": "mana",
+                "value": 30,
+                "image": "Button_image/mana_potion.png",
+                "pos_hint": {'center_x': 0.369, 'center_y': 0.42},  # ปรับตำแหน่งของ Mana Potion
+                "size_hint": (0.239, 0.125),  # ปรับขนาดของ Mana Potion
+            },
+        ]
+
+        # แสดงไอเท็มใน Inventory
+        for item in self.items:
+            # เพิ่มปุ่มพร้อมภาพไอเท็ม
+            item_button = Button(
+                size_hint=item["size_hint"],  # ขนาดจากข้อมูลไอเท็ม
+                pos_hint=item["pos_hint"],  # ตำแหน่งจากข้อมูลไอเท็ม
+                background_normal=item["image"],  # ใช้รูปภาพแทนปุ่ม
+                background_down=item["image"],  # ใช้รูปเดียวกันเมื่อกดปุ่ม
+            )
+            item_button.bind(on_release=lambda btn, i=item: self.use_item(i))  # ผูกฟังก์ชันใช้งานไอเท็ม
+            self.add_widget(item_button)
+
+        # ปุ่มปิดหน้าต่าง Inventory
+        self.close_button = Button(
+            text="Close",
+            size_hint=(0.2, 0.1),
+            pos_hint={'center_x': 0.5, 'center_y': 0.2}
+        )
+        self.close_button.bind(on_release=lambda btn: self.close_inventory())
+        self.add_widget(self.close_button)
+
+    def use_item(self, item):
+        """ใช้งานไอเท็ม"""
+        print(f"Using item: {item['name']}")
+        if item["effect"] == "heal":
+            self.parent.character.health_bar.increase_health(item["value"])
+        elif item["effect"] == "mana":
+            self.parent.character.mana_bar.increase_mana(item["value"])
+        self.items.remove(item)  # ลบไอเท็มหลังใช้งาน
+        self.update_inventory()
+
+    def update_inventory(self):
+        """อัปเดตหน้าต่าง Inventory"""
+        self.clear_widgets()
+        self.__init__()
+
+    def close_inventory(self):
+        """ปิดหน้าต่าง Inventory"""
+        if self.parent:
+            self.parent.remove_widget(self)
 
 class PlayScreen(Screen):
     def __init__(self, **kwargs):
@@ -454,20 +526,27 @@ class PlayScreen(Screen):
                 # ลดมานาทันที
                 self.character.mana_bar.reduce_mana(50)
 
+                # Slime แสดงแอนิเมชัน on_hit ทันที
+                self.slime.on_hit()
             
                 # ลดเลือดของ Slime
                 self.slime.reduce_health(20)
 
-                # Slime แสดงแอนิเมชัน on_hit ทันที
-                self.slime.on_hit()
-                
                 # เรียกแอนิเมชัน Magic
                 self.character.magic_animation()
 
                 # Slime โจมตีตัวละครกลับ
-                Clock.schedule_once(lambda dt: self.slime_attacks_character(), 0.016)
+                Clock.schedule_once(lambda dt: self.slime_attacks_character(), 0.01)
             else:
                 print("Not enough mana to use Magic!")
+    
+        elif button_index == 2:  # ปุ่ม Bags
+            print("Opening Inventory!")
+            if not hasattr(self, "inventory") or not self.inventory:  # ตรวจสอบว่ามี Inventory เปิดอยู่หรือไม่
+                self.inventory = Inventory()  # สร้างหน้าต่าง Inventory
+                self.add_widget(self.inventory)
+            else:
+                print("Inventory is already open!")
 
     def slime_attacks_character(self):
         print("Slime attacks Character!")
