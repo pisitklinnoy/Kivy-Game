@@ -9,6 +9,7 @@ from kivy.uix.progressbar import ProgressBar
 from kivy.properties import NumericProperty
 from kivy.uix.widget import Widget
 from kivy.graphics import Color, Rectangle
+from kivy.uix.label import Label
 
 
 class AnimatedSlime(FloatLayout):
@@ -349,7 +350,7 @@ class Inventory(FloatLayout):
         )
         self.add_widget(self.background)
 
-        # ตัวอย่างไอเท็มใน Inventory พร้อมตำแหน่งและขนาดเฉพาะ
+        # ข้อมูลไอเท็มใน Inventory
         self.items = [
             {
                 "name": "Health Potion",
@@ -357,9 +358,12 @@ class Inventory(FloatLayout):
                 "value": 50,
                 "background_normal": "Button_image/health_potion_normal.png",
                 "background_down": "Button_image/health_potion_down.png",
+                "background_disabled": "Button_image/health_potion_disabled.png",
                 "pos_hint": {'center_x': 0.367, 'center_y': 0.53},
                 "size_hint": (0.25, 0.165),
-                "quantity": 2,  # เริ่มต้นด้วย 1 ขวด
+                "disabled_pos_hint": {'center_x': 0.367, 'center_y': 0.53},
+                "disabled_size_hint": (0.208, 0.095),
+                "quantity": 1,
             },
             {
                 "name": "Mana Potion",
@@ -367,66 +371,73 @@ class Inventory(FloatLayout):
                 "value": 30,
                 "background_normal": "Button_image/mana_potion_normal.png",
                 "background_down": "Button_image/mana_potion_down.png",
+                "background_disabled": "Button_image/mana_potion_disabled.png",
                 "pos_hint": {'center_x': 0.369, 'center_y': 0.42},
                 "size_hint": (0.241, 0.125),
-                "quantity": 2,  # เริ่มต้นด้วย 1 ขวด
+                "disabled_pos_hint": {'center_x': 0.369, 'center_y': 0.42},
+                "disabled_size_hint": (0.208, 0.095),
+                "quantity": 1,
             },
         ]
+
         # แสดงไอเท็มใน Inventory
         for item in self.items:
-            # เพิ่มปุ่มพร้อมภาพไอเท็ม
             item_button = Button(
                 size_hint=item["size_hint"],
                 pos_hint=item["pos_hint"],
                 background_normal=item["background_normal"],
                 background_down=item["background_down"],
-                text=f"x{item['quantity']}",  # แสดงจำนวนที่เหลือ
+                text=f"x{item['quantity']}",
                 font_size='20sp',
-                color=(1, 1, 1, 1),  # สีตัวอักษร (RGBA)
+                color=(1, 1, 1, 1),
+                disabled=item["quantity"] <= 0
             )
-            item_button.bind(on_release=lambda btn, i=item: self.use_item(i))
+            item_button.bind(on_release=lambda btn, i=item, b=item_button: self.use_item(i, b))
             self.add_widget(item_button)
 
         # ปุ่มปิดหน้าต่าง Inventory
         self.close_button = Button(
             size_hint=(0.09, 0.11),
             pos_hint={'center_x': 0.37, 'center_y': 0.33},
-            background_normal='Button_image/input_exit_inventory_button.png',  # รูปภาพปุ่มปกติ
-            background_down='Button_image/output_exit_inventory_button.png',      # รูปภาพปุ่มเมื่อถูกกด
+            background_normal='Button_image/input_exit_inventory_button.png',
+            background_down='Button_image/output_exit_inventory_button.png',
         )
         self.close_button.bind(on_release=lambda btn: self.close_inventory())
         self.add_widget(self.close_button)
 
-    def use_item(self, item):
+    def use_item(self, item, button):
         """ใช้งานไอเท็ม"""
-        print(f"Using item: {item['name']}")
-        if item["effect"] == "heal":
-            self.parent.character.health_bar.increase_health(item["value"])
-        elif item["effect"] == "mana":
-            self.parent.character.mana_bar.increase_mana(item["value"])
-        
-        # ลดจำนวนไอเท็ม
-        item["quantity"] -= 1
-        print(f"{item['name']} remaining: {item['quantity']}")
+        if item["quantity"] > 0:
+            print(f"Using item: {item['name']}")
+            if item["effect"] == "heal":
+                self.parent.character.health_bar.increase_health(item["value"])
+            elif item["effect"] == "mana":
+                self.parent.character.mana_bar.increase_mana(item["value"])
 
-        # ลบไอเท็มถ้าจำนวนเป็น 0
-        if item["quantity"] <= 0:
-            self.items.remove(item)
-        
-        # อัปเดต Inventory หลังใช้งาน
-        self.update_inventory()
+            # ลดจำนวนไอเท็ม
+            item["quantity"] -= 1
+            print(f"{item['name']} remaining: {item['quantity']}")
+
+            # อัปเดตข้อความบนปุ่ม
+            button.text = f"x{item['quantity']}"
+
+            # หากจำนวนเหลือ 0 ให้ปิดการใช้งานปุ่ม
+            if item["quantity"] <= 0:
+                button.disabled = True
+                button.size_hint = item["disabled_size_hint"]
+                button.pos_hint = item["disabled_pos_hint"]
 
     def update_inventory(self):
         """อัปเดตหน้าต่าง Inventory"""
-        self.clear_widgets()  # ลบวิดเจ็ตทั้งหมด
-        self.__init__()       # เรียกใช้การสร้าง Inventory ใหม่
+        self.clear_widgets()
+        self.__init__()
 
     def close_inventory(self):
         """ปิดหน้าต่าง Inventory"""
-        parent = self.parent  # เข้าถึง parent โดยตรง
-        if parent and hasattr(parent, 'inventory'):  # ตรวจสอบว่า parent มี attribute `inventory`
-            parent.inventory = None  # รีเซ็ตสถานะ inventory ใน PlayScreen
-            parent.remove_widget(self)  # ลบ Inventory ออกจาก parent
+        parent = self.parent
+        if parent and hasattr(parent, 'inventory'):
+            parent.inventory = None
+            parent.remove_widget(self)
 
 class PlayScreen(Screen):
     def __init__(self, **kwargs):
@@ -444,8 +455,6 @@ class PlayScreen(Screen):
             pos_hint={'center_x': 0.5, 'center_y': 0.5}
         )
         self.layout.add_widget(background)
-
-        # เพิ่ม slime
 
         enermy_heal_bar = Image(
             source='enermy_heal_bar.png',  # พาธรูปภาพที่ต้องการเพิ่ม
@@ -525,6 +534,16 @@ class PlayScreen(Screen):
         # เพิ่ม layout เป็นวิดเจ็ตลูกใน PlayScreen
         self.add_widget(self.layout)
 
+        # ป้ายข้อความแสดงผลลัพธ์
+        self.result_label = Label(
+            text="",
+            font_size='40sp',
+            color=(1, 1, 1, 1),  # สีขาว
+            pos_hint={'center_x': 0.5, 'center_y': 0.6},
+            size_hint=(0.8, 0.2),
+        )
+        self.layout.add_widget(self.result_label)
+
     def on_button_press(self, button_index):
         if button_index == 0:  # ปุ่ม Fight
             print("Character attacks Slime with Fight!")
@@ -561,6 +580,8 @@ class PlayScreen(Screen):
                 self.add_widget(self.inventory)
             else:
                 print("Inventory is already open!")
+                
+        self.check_health_status()
 
     def slime_attacks_character(self):
         print("Slime attacks Character!")
@@ -569,6 +590,25 @@ class PlayScreen(Screen):
         self.slime.attack_animation(
             on_attack_complete=lambda: self.character.health_bar.reduce_health(15)  # ลดเลือดตัวละครลง 15 หลังแอนิเมชันจบ
         )
+        self.check_health_status()
+
+    def check_health_status(self):
+        """ตรวจสอบสถานะเลือดของตัวละครและ Slime"""
+        if self.character.health_bar.health <= 0:
+            self.result_label.text = "Defeat"
+            self.result_label.color = (1, 0, 0, 1)  # สีแดง
+            self.disable_game_controls()
+
+        elif self.slime.health_bar.health <= 0:
+            self.result_label.text = "Victory"
+            self.result_label.color = (0, 1, 0, 1)  # สีเขียว
+            self.disable_game_controls()
+
+    def disable_game_controls(self):
+        """ปิดการควบคุมเกมหลังจากจบ"""
+        for child in self.layout.children:
+            if isinstance(child, Button):
+                child.disabled = True
 
     def go_to_menu(self, instance):
         # เปลี่ยนกลับไปยังหน้าจอเมนู
