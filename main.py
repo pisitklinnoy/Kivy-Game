@@ -480,6 +480,10 @@ class PlayScreen(Screen):
         )
         self.layout.add_widget(mana_bar)
 
+        # สถานะ Cooldown
+        self.cooldowns = [0, 0]  # เก็บ cooldown [Fight, Magic]
+        self.cooldown_labels = []
+
         # ปุ่ม 4 ปุ่มบริเวณขวาล่างพร้อมรูปภาพแยก
         button_positions = [
             {'x': 0.034, 'y': 0.37},  # ตำแหน่งปุ่ม 1
@@ -530,6 +534,22 @@ class PlayScreen(Screen):
         )
         back_button.bind(on_press=self.go_to_menu)
         self.layout.add_widget(back_button)
+
+        # รูป Victory และ Defeat
+        self.victory_image = Image(
+            source='ui_win-lose/victory.png',
+            size_hint=(0.6, 0.6),
+            pos_hint={'center_x': 0.5, 'center_y': 0.5},
+            opacity=0
+        )
+        self.defeat_image = Image(
+            source='ui_win-lose/defeat.png',
+            size_hint=(0.6, 0.6),
+            pos_hint={'center_x': 0.5, 'center_y': 0.5},
+            opacity=0
+        )
+        self.layout.add_widget(self.victory_image)
+        self.layout.add_widget(self.defeat_image)
 
         # เพิ่ม layout เป็นวิดเจ็ตลูกใน PlayScreen
         self.add_widget(self.layout)
@@ -593,16 +613,18 @@ class PlayScreen(Screen):
         self.check_health_status()
 
     def check_health_status(self):
-        """ตรวจสอบสถานะเลือดของตัวละครและ Slime"""
         if self.character.health_bar.health <= 0:
-            self.result_label.text = "Defeat"
-            self.result_label.color = (1, 0, 0, 1)  # สีแดง
-            self.disable_game_controls()
-
+            self.show_defeat()
         elif self.slime.health_bar.health <= 0:
-            self.result_label.text = "Victory"
-            self.result_label.color = (0, 1, 0, 1)  # สีเขียว
-            self.disable_game_controls()
+            self.show_victory()
+
+    def show_victory(self):
+        self.victory_image.opacity = 1  # แสดงรูป Victory
+        self.disable_game_controls()
+
+    def show_defeat(self):
+        self.defeat_image.opacity = 1  # แสดงรูป Defeat
+        self.disable_game_controls()
 
     def disable_game_controls(self):
         """ปิดการควบคุมเกมหลังจากจบ"""
