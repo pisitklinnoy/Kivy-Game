@@ -525,6 +525,18 @@ class PlayScreen(Screen):
         self.character = AnimatedCharacter()
         self.layout.add_widget(self.character)
 
+        # ป้ายข้อความคำอธิบาย
+        self.action_label = Label(
+            text="",  # เริ่มต้นด้วยข้อความว่าง
+            font_size='30sp',
+            color=(1, 1, 1, 1),  # สีข้อความ (ขาว)
+            size_hint=(0.8, 0.1),
+            pos_hint={'center_x': 0.5, 'center_y': 0.8},  # ตำแหน่งบนหน้าจอ
+            halign='center',
+            valign='middle'
+        )
+        self.layout.add_widget(self.action_label)
+
         # ปุ่มกลับไปที่เมนู
         back_button = Button(
             size_hint=(0.09, 0.1),
@@ -554,6 +566,20 @@ class PlayScreen(Screen):
         # เพิ่ม layout เป็นวิดเจ็ตลูกใน PlayScreen
         self.add_widget(self.layout)
 
+
+    def show_message(self, message, duration=2):
+        """แสดงข้อความคำอธิบายชั่วคราว"""
+        self.action_label.text = message
+        self.action_label.opacity = 1  # แสดงข้อความ
+
+        # ตั้งเวลาให้ข้อความหายไป
+        Clock.schedule_once(lambda dt: self.hide_message(), duration)
+
+    def hide_message(self):
+        """ซ่อนข้อความคำอธิบาย"""
+        self.action_label.text = ""
+        self.action_label.opacity = 0  # ซ่อนข้อความ
+
         # ป้ายข้อความแสดงผลลัพธ์
         self.result_label = Label(
             text="",
@@ -566,6 +592,7 @@ class PlayScreen(Screen):
 
     def on_button_press(self, button_index):
         if button_index == 0:  # ปุ่ม Fight
+            self.show_message("Character attacks Slime with Fight!")
             print("Character attacks Slime with Fight!")
             self.slime.reduce_health(10)  # ลดเลือดของ Slime ลง 10
 
@@ -574,14 +601,15 @@ class PlayScreen(Screen):
 
         elif button_index == 1:  # ปุ่ม Magic
             if self.character.mana_bar.mana >= 50:  # เช็คว่ามานาเพียงพอ
+                self.show_message("Character attacks Slime with Magic!")
                 print("Character attacks Slime with Magic!")
-            
+
                 # ลดมานาทันที
                 self.character.mana_bar.reduce_mana(50)
 
                 # Slime แสดงแอนิเมชัน on_hit ทันที
                 self.slime.on_hit()
-            
+
                 # ลดเลือดของ Slime
                 self.slime.reduce_health(20)
 
@@ -591,16 +619,28 @@ class PlayScreen(Screen):
                 # Slime โจมตีตัวละครกลับ
                 Clock.schedule_once(lambda dt: self.slime_attacks_character(), 0.01)
             else:
+                self.show_message("Not enough mana to use Magic!")
                 print("Not enough mana to use Magic!")
-    
+
         elif button_index == 2:  # ปุ่ม Bags
+            self.show_message("Opening Inventory!")
             print("Opening Inventory!")
             if not hasattr(self, "inventory") or not self.inventory:
                 self.inventory = Inventory()  # สร้างหน้าต่าง Inventory
                 self.add_widget(self.inventory)
             else:
                 print("Inventory is already open!")
-                
+
+        self.check_health_status()
+
+    def slime_attacks_character(self):
+        self.show_message("Slime attacks Character!")
+        print("Slime attacks Character!")
+
+        # เรียกใช้แอนิเมชันการโจมตีของ Slime
+        self.slime.attack_animation(
+            on_attack_complete=lambda: self.character.health_bar.reduce_health(15)  # ลดเลือดตัวละครลง 15 หลังแอนิเมชันจบ
+        )
         self.check_health_status()
 
     def slime_attacks_character(self):
