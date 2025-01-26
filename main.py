@@ -531,7 +531,7 @@ class PlayScreen(Screen):
             font_size='30sp',
             color=(1, 1, 1, 1),  # สีข้อความ (ขาว)
             size_hint=(0.8, 0.1),
-            pos_hint={'center_x': 0.5, 'center_y': 0.8},  # ตำแหน่งบนหน้าจอ
+            pos_hint={'center_x': 0.5, 'center_y': 0.4},  # ตำแหน่งบนหน้าจอ
             halign='center',
             valign='middle'
         )
